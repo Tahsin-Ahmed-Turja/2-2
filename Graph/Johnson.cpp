@@ -1,155 +1,119 @@
 #include <bits/stdc++.h>
 using namespace std;
-#define ll long long
-#define llu unsigned long long
-typedef pair<int, int> pii;
-typedef tuple<int, int, int> tii;
-const int N = 1e3 + 7;
-const int M = 1e9 + 7;
-const int INF = numeric_limits<int>::max();
+int n, m;
+const int N = 100000;
+vector<pair<long long, long long>> g[N];
+vector<long long> Bdist(N, INT_MAX);
+vector<vector<int>> dist(1009,vector<int>(1009,INT_MAX));
 
-struct Edge
+bool balmenFord(int src)
 {
-    int target, weight;
-};
+    Bdist[src] = 0;
 
-bool hasNegativeCycle = 0;
-vector<int> bell_dist(N, INF), dij_dist(N, INF);
-// vector<vector<int>> init_dist(N, vector<int> (N, INF));
-vector<vector<int>> short_dist(N, vector<int>(N, INF));
-// vector<vector<int>> dij_dist(N, vector<int> (N, INF));
-
-void bellmanFord(vector<vector<Edge>> &graph, int numVertices, int source)
-{
-    vector<int> parent(numVertices + 1, -1);
-
-    bell_dist[source] = 0;
-
-    for (int i = 0; i <= numVertices - 1; ++i)
+    for (int i = 0; i < n; i++)
     {
-        for (int u = 0; u <= numVertices; u++)
+        for (int j = 0; j <= n; j++)
         {
-            for (const Edge &edge : graph[u])
+            for (auto e : g[j])
             {
-                if (bell_dist[u] != INF && bell_dist[u] + edge.weight < bell_dist[edge.target])
-                {
-                    bell_dist[edge.target] = bell_dist[u] + edge.weight;
-                    parent[edge.target] = u;
-                }
+                int v = e.first;
+                int w = e.second;
+                Bdist[v] = min(Bdist[v], Bdist[j] + w);
             }
         }
     }
 
-    for (int u = 0; u <= numVertices; u++)
+    for (int j = 0; j <= n; j++)
     {
-        for (const Edge &edge : graph[u])
+        for (auto e : g[j])
         {
-            if (bell_dist[u] != INF && bell_dist[u] + edge.weight < bell_dist[edge.target])
-            {
-                hasNegativeCycle = true;
-                break;
+            int v = e.first;
+            int w = e.second;
+            if(Bdist[j]!=INT_MAX && Bdist[j]+w<Bdist[v]){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void Dijestra(int src){
+    set<pair<int,int>> s;
+
+    s.insert({0,src});
+    dist[src][src] = 0;
+    
+    while(s.size()>0){
+        auto node = *s.begin();
+        int v = node.second;
+        s.erase(s.begin());
+        for(auto c : g[v]){
+            int cv = c.first;
+            int wt = c.second;
+            if(dist[src][v]+wt < dist[src][cv]){
+                dist[src][cv] = dist[src][v] + wt;
+                s.insert({dist[src][cv],cv});
             }
         }
     }
 }
 
-void dijkstra(vector<vector<Edge>> &graph, int numVertices, int source)
-{
-    vector<int> parent(numVertices + 1, -1);
+bool jonShon(){
 
-    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
-    pq.push(make_pair(0, source));
-    dij_dist[source] = 0;
+    for(int i=0;i<n;i++){
+        g[n].push_back({i,0});
+    }
 
-    while (!pq.empty())
-    {
-        int curdij_dist = pq.top().first;
-        int curVertex = pq.top().second;
-        pq.pop();
+    bool in = balmenFord(n);
+    if(in) return in;
 
-        if (curdij_dist > dij_dist[curVertex])
-        {
-            continue; // Skip outdated entries in the priority queue
-        }
-
-        for (const Edge &edge : graph[curVertex])
-        {
-            int newdij_dist = curdij_dist + edge.weight;
-            if (newdij_dist < dij_dist[edge.target])
-            {
-                dij_dist[edge.target] = newdij_dist;
-                parent[edge.target] = curVertex;
-                pq.push(make_pair(newdij_dist, edge.target));
-            }
+    for(int i=0;i<n;i++){
+        for(auto e : g[i]){
+            e.second = e.second + Bdist[i] - Bdist[e.first];
         }
     }
-}
 
-void johnson(vector<vector<Edge>> &graph, int numVertices)
-{
-    bellmanFord(graph, numVertices, numVertices);
-    if (hasNegativeCycle)
-    {
-        cout << -1 << "\n";
-        return;
+    for(int i=0;i<n;i++){
+        Dijestra(i);
     }
-    for (int u = 0; u < numVertices; u++)
-    {
-        for (Edge &edge : graph[u])
-        {
-            edge.weight = edge.weight + bell_dist[u] - bell_dist[edge.target];
+
+     for(int i=0;i<n;i++){
+        for(auto e : g[i]){
+            dist[i][e.first] = dist[i][e.first] + Bdist[e.first] - Bdist[i];
         }
     }
-    for (int u = 0; u < numVertices; u++)
-    {
-        dijkstra(graph, numVertices, u);
-        for (int v = 0; v < numVertices; v++)
-        {
-            short_dist[u][v] = dij_dist[v];
-        }
-        dij_dist.assign(numVertices, INF);
-    }
-    for (int u = 0; u < numVertices; u++)
-    {
-        short_dist[u][u] = 0;
-        for (Edge &edge : graph[u])
-        {
-            short_dist[u][edge.target] = short_dist[u][edge.target] + bell_dist[edge.target] - bell_dist[u];
-        }
-    }
+
+    return in;
+
 }
 
 int main()
 {
-    ios::sync_with_stdio(false);
-    cin.tie(0);
-    int tt = 1;
-    // cin >> tt;
-    for (int tc = 1; tc <= tt; tc++)
+    bool isdirected = true;
+    bool isCycle = false;
+    cin >> n >> m;
+    for (int i = 0; i < m; i++)
     {
-        // cout << "Case " << tc << ": ";
-        int numVertices, numEdges;
-        cin >> numVertices >> numEdges;
-
-        vector<vector<Edge>> graph(numVertices + 1);
-        for (int i = 0; i < numEdges; ++i)
-        {
-            int source, target, weight;
-            cin >> source >> target >> weight;
-            graph[source].push_back({target, weight});
+        int x, y, wt;
+        cin >> x >> y >> wt;
+        if(isdirected){
+            g[x].push_back({y, wt});
         }
-        for (int i = 0; i < numVertices; i++)
-        {
-            graph[numVertices].push_back({i, 0});
-        }
-        johnson(graph, numVertices);
-        for (int i = 0; i < numVertices; i++)
-        {
-            for (int j = 0; j < numVertices; j++)
-            {
-                cout << i << " " << j << " " << short_dist[i][j] << "\n";
-            }
+        else{
+            if(wt<0) isCycle = true;
+            g[x].push_back({y,wt});
+            g[y].push_back({x,wt});
         }
     }
-    return 0;
+    if(!isCycle) isCycle = jonShon();
+    if(isCycle) cout << "Graph contain cycle\n";
+    else{
+        for(int i=0;i<n;i++){
+            for(int j=0;j<n;j++){
+                if(dist[i][j]==INT_MAX) cout << "I" <<" ";
+                else cout << dist[i][j] <<" ";
+            }
+            cout << endl;
+        }
+    }
 }
