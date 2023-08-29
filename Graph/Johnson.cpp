@@ -1,10 +1,11 @@
 #include <bits/stdc++.h>
 using namespace std;
 int n, m;
-const int N = 100000;
+const long long N = 100000, M = LLONG_MAX;
 vector<pair<long long, long long>> g[N];
+vector<pair<long long, long long>> G[N];
 vector<long long> Bdist(N, INT_MAX);
-vector<vector<int>> dist(1009,vector<int>(1009,INT_MAX));
+long long ans[1009][1009];
 
 bool balmenFord(int src)
 {
@@ -37,26 +38,38 @@ bool balmenFord(int src)
     return false;
 }
 
-void Dijestra(int src){
-    set<pair<int,int>> s;
 
-    s.insert({0,src});
-    dist[src][src] = 0;
-    
-    while(s.size()>0){
-        auto node = *s.begin();
-        int v = node.second;
-        s.erase(s.begin());
-        for(auto c : g[v]){
-            int cv = c.first;
-            int wt = c.second;
-            if(dist[src][v]+wt < dist[src][cv]){
-                dist[src][cv] = dist[src][v] + wt;
-                s.insert({dist[src][cv],cv});
+vector<long long> dijkstra(int src)
+{
+    vector<bool> vis(N, false);
+    vector<long long> dist(N, M);
+    set<pair<int, int>> st;
+    st.insert({0, src});
+    dist[src] = 0;
+
+    while (!st.empty())
+    {
+        auto node = *st.begin();
+        st.erase(st.begin());
+        long long v = node.second;
+        long long dis = node.first;
+        if (vis[v])
+            continue;
+        vis[v] = 1;
+        for (auto child : G[v])
+        {
+            long long child_v = child.first;
+            long long wt = child.second;
+            if (dist[v] + wt < dist[child_v])
+            {
+                dist[child_v] = dist[v] + wt;
+                st.insert({dist[child_v], child_v});
             }
         }
     }
+    return dist;
 }
+
 
 bool jonShon(){
 
@@ -67,19 +80,24 @@ bool jonShon(){
     bool in = balmenFord(n);
     if(in) return in;
 
-    for(int i=0;i<n;i++){
-        for(auto e : g[i]){
-            e.second = e.second + Bdist[i] - Bdist[e.first];
+    for(int i=0;i<1009;i++){
+        for(int j=0;j<1009;j++){
+            ans[i][j] = M;
         }
     }
 
     for(int i=0;i<n;i++){
-        Dijestra(i);
+        for(auto e : g[i]){
+            e.second = e.second + Bdist[i] - Bdist[e.first];
+            G[i].push_back({e.first,e.second});
+        }
     }
 
-     for(int i=0;i<n;i++){
-        for(auto e : g[i]){
-            dist[i][e.first] = dist[i][e.first] + Bdist[e.first] - Bdist[i];
+    for(int i=0;i<n;i++){
+        vector<long long> dist = dijkstra(i);
+        for(int j=0;j<n;j++){
+            if(dist[j]==M) continue;
+            ans[i][j] = dist[j] - Bdist[i] + Bdist[j];
         }
     }
 
@@ -97,7 +115,7 @@ int main()
         int x, y, wt;
         cin >> x >> y >> wt;
         if(isdirected){
-            g[x].push_back({y, wt});
+            g[--x].push_back({--y, wt});
         }
         else{
             if(wt<0) isCycle = true;
@@ -110,8 +128,8 @@ int main()
     else{
         for(int i=0;i<n;i++){
             for(int j=0;j<n;j++){
-                if(dist[i][j]==INT_MAX) cout << "I" <<" ";
-                else cout << dist[i][j] <<" ";
+                if(ans[i][j]==M) cout << "#" <<" ";
+                else cout << ans[i][j] <<" ";
             }
             cout << endl;
         }
