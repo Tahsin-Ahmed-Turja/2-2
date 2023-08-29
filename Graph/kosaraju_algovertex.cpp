@@ -6,6 +6,8 @@ vector<int> gr[100001];
 stack<int> s;
 int n, m;
 vector<bool> vis(100001,false);
+// vector<bool>ispresend(100001,false);
+// vector<vector<int>>ans;
 
 void dfs(int u)
 {
@@ -17,11 +19,11 @@ void dfs(int u)
     s.push(u);
 }
 
-void dfs2(int u,int par){
-    if(u!=par) cout << par <<" "<< u << endl;
+void dfs2(int u){
+    cout << u <<" ";
     vis[u] = true;
     for(auto i : gr[u]){
-        if(!vis[i]) dfs2(i,u);
+        if(!vis[i]) dfs2(i);
     }
 }
 
@@ -38,7 +40,7 @@ void findScc(){
         int u = s.top();
         s.pop();
         if(!vis[u]){
-            dfs2(u,u);
+            dfs2(u);
             cout << endl;
         }
     }
