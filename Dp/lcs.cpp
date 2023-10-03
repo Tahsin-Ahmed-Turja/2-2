@@ -61,5 +61,18 @@ int main()
         }
     cout << a <<" "<< b << endl;
     cout << lcsr(a.size()-1,b.size()-1,a,b) << endl;
+        int m = a.size(), n = b.size();
+    while(1){
+        if(c[m][n]=='u') m = m-1;
+        if(c[m][n]=='l') n = n - 1;
+        if(c[m][n]=='c'){
+            ans.push_back(a[m-1]);
+            m = m-1;
+            n = n - 1;
+        }
+        if(c[m][n]=='*') break;
+    }
+    reverse(ans.begin(),ans.end());
+    cout << ans << endl;
     
 }
